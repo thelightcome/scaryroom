@@ -665,10 +665,21 @@ setup();
       }
     }
 
+    let mouseOut = false;
+    document.addEventListener("mouseleave", function(event){
+      if(event.clientY <= 0 || event.clientX <= 0 || (event.clientX >= window.innerWidth || event.clientY >= window.innerHeight))
+        {
+          mouseOut = true;
+        }
+    });
+    document.addEventListener("mouseenter", function(event){
+      mouseOut = false;
+    });
+
     function animate() {
       renderer.render(scene, camera);
       screenShake.update(camera);
-      if (!control.mouseDragOn && !staticCam) control.update(clock.getDelta());
+      if (!control.mouseDragOn && !staticCam && !mouseOut) control.update(clock.getDelta());
       cough();
 
       if ((Object.values(walkKey).some(e => e)) && walking.paused) {
