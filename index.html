@@ -127,6 +127,7 @@
   <audio id="switcher-audio" src="./switcher.wav"></audio>
   <audio id="violin" src="./violin.wav" loop></audio>
   <audio id="scarySream" src="./scary-sream.wav"></audio>
+  <audio id="manScream" src="./man-scream.wav"></audio>
   <audio id="walking" src="./walking.wav" loop></audio>
   <audio src="./cough.wav" id="cough"></audio>
   <img id="chost-girl-scale" src="./chost-girl-black-scale.png" alt="">
@@ -385,6 +386,8 @@ setup();
       chost.name = "chost";
       planes.push(chost);
       const scarySream = document.querySelector("#scarySream");
+      const manScream = document.querySelector("#manScream");
+      manScream.volume = 0.1;
       let raycaster = new THREE.Raycaster();
       animFuncs.push((pickPosition) => {
         if (chost.visible) {
@@ -393,6 +396,7 @@ setup();
           let distance = new THREE.Line3(camera.position, chost.position).distance();
           if (intersectedObjects.length && intersectedObjects[0].object.name === "chost" && distance < 40) {
             if (scarySream.paused) {
+              manScream.play();
               scarySream.play().then(() => {
                 chost.visible = false;
                 chostGirlScale.style.opacity = 1;
