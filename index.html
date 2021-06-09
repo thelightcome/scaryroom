@@ -378,7 +378,7 @@ setup();
         let a = chost.position.x - camera.position.x;
         let b = chost.position.z - camera.position.z;
         chost.rotation.y = a / b;
-        chost.visible = true;
+        if (lampLight.intensity == 0) chost.visible = true;
         canvasWrapper.classList.remove("shake");
       }
 
