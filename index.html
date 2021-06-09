@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="./chost-girl-black-scale.png" type="image/x-icon">
+  <title>ROOM-THREEJS</title>
+  <script src="./html2canvas.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    .canvas-wrapper {
+      position: absolute;
+      left: -10vw;
+      top: -10vh;
+      width: 120vw;
+      height: 120vh;
+      padding: 10vh 10vw;
+      box-sizing: border-box;
+      background: #000;
+    }
+
+    .canvas-wrapper.shake {
+      animation: shake 0.2s infinite;
+    }
+
+    #canvas {
+      background-color: #020202;
+    }
+
+    @keyframes shake {
+      0% {
+        transform: rotateY(10deg);
+      }
+
+      10% {
+        transform: rotateY(-10deg);
+      }
+
+      20% {
+        transform: rotateY(10deg);
+      }
+
+      30% {
+        transform: rotateY(-10deg);
+      }
+
+      40% {
+        transform: rotateY(10deg);
+      }
+
+      50% {
+        transform: rotateY(-10deg);
+      }
+
+      60% {
+        transform: rotateY(10deg);
+      }
+
+      70% {
+        transform: rotateY(-10deg);
+      }
+
+      80% {
+        transform: rotateY(10deg);
+      }
+
+      90% {
+        transform: rotateY(-10deg);
+      }
+
+      100% {
+        transform: rotateY(10deg);
+      }
+    }
+
+    #video,
+    #piano,
+    #mommy {
+      display: none;
+    }
+
+    #chost-girl-scale {
+      position: absolute;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: contain;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .clone-me {
+      width: 300px;
+      height: 150px;
+      font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+      background-color: transparent;
+      text-align: center;
+      font-size: 2em;
+      font-weight: bolder;
+      letter-spacing: 3px;
+      line-height: 1.1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-transform: uppercase;
+      color: red;
+      position: fixed;
+      word-break: break-all;
+      z-index: 150;
+    }
+  </style>
+</head>
+
+<body>
+  <video src="./piano-effect.mp4" id="piano" autoplay loop></video>
+  <video src="./mommy.mp4" id="mommy" autoplay loop></video>
+  <audio id="lamp-sound" src="./lamp-sound.mp3" loop></audio>
+  <video id="video" src="./discovery.mp4"></video>
+  <audio id="switcher-audio" src="./switcher.wav"></audio>
+  <audio id="violin" src="./violin.wav" loop></audio>
+  <audio id="scarySream" src="./scary-sream.wav"></audio>
+  <audio id="walking" src="./walking.wav" loop></audio>
+  <audio src="./cough.wav" id="cough"></audio>
+  <img id="chost-girl-scale" src="./chost-girl-black-scale.png" alt="">
+  <div class="canvas-wrapper">
+    <canvas id="canvas"></canvas>
+  </div>
+  <script type="module">
+    import * as THREE from "../three.js-master/build/three.module.js"
+    import { FirstPersonControls } from "../three.js-master/examples/jsm/controls/FirstPersonControls.js"
+    import { OBJLoader } from "../three.js-master/examples/jsm/loaders/OBJLoader.js"
+
+    let canvas, cw, ch;
+    let scene, camera, cameraBox, renderer, control;
+    const animFuncs = [];
+    const pickFuncs = [];
+    const texture = new THREE.TextureLoader();
+    const objLoader = new OBJLoader();
+    const clock = new THREE.Clock();
+    const screenShake = ScreenShake();
+    const planes = [];
+
+    const roomW = 60,
+      roomD = 40,
+      roomH = 15,
+      wallD = 0.5;
+
+    function setup() {
+      canvas = document.querySelector("#canvas");
+      cw = canvas.width = window.innerWidth;
+      ch = canvas.height = window.innerHeight;
+
+      scene = new THREE.Scene();
+
+      cameraBox = new THREE.Box3();
+      cameraBox.setFromObject(new THREE.Mesh(new THREE.BoxGeometry(roomW - 4, roomH - 4, roomD - 4), new THREE.MeshBasicMaterial({color: 0x0f0f00, side: THREE.DoubleSide})));
+      camera = new THREE.PerspectiveCamera(75, cw / ch, 0.1, 1000);
+      camera.position.y = 0;
+      camera.position.z = 10;
+      camera.lookAt(0, 0, 0);
+
+      const spotLight = new THREE.SpotLight(0xffffff, 1, 45, 0.5);
+      spotLight.angle = 0.2;
+      spotLight.penumbra = 1;
+      spotLight.decay = 2;
+      animFuncs.push((pickPosition) => {
+        spotLight.position.copy(new THREE.Vector3(-pickPosition.x, -pickPosition.y, 1));
+      })
+      spotLight.castShadow = true;
+      spotLight.shadow.mapSize.width = 512;
+      spotLight.shadow.mapSize.height = 512;
+      spotLight.shadow.camera.near = 0.5;
+      spotLight.shadow.camera.far = 500;
+      spotLight.shadow.camera.fov = 0.5;
+      camera.add(spotLight);
+      spotLight.position.set(0, 0, 1);
+      spotLight.target = camera;
+      scene.add(camera);
+
+      control = new FirstPersonControls(camera, canvas);
+      control.movementSpeed = 5;
+      control.lookSpeed = 0.1;
+      control.constrainVertical = true;
+      control.verticalMax = Math.PI / 6 * 3;
+      control.verticalMin = Math.PI / 5;
+
+      const light = new THREE.AmbientLight(0x404040, 0.4);
+      scene.add(light);
+
+      renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true
+      });
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.setSize(cw, ch);
+
+      window.addEventListener("resize", () => {
+        cw = canvas.width = window.innerWidth;
+        ch = canvas.height = window.innerHeight;
+        camera.aspect = cw / ch;
+        renderer.setSize(cw, ch);
+      });
+    }
+
+setup();
+
+    {
+      const ceilGeo = new THREE.BoxGeometry(roomW, wallD, roomD);
+      const ceilTexture = texture.load("./ceil.jpg");
+      const ceilMat = new THREE.MeshPhongMaterial({
+        color: 0xeff0da,
+        map: ceilTexture
+      });
+      const ceil = new THREE.Mesh(ceilGeo, ceilMat);
+      ceil.position.y = roomH / 2 + wallD / 2;
+      ceil.receiveShadow = true;
+
+      const floorGeo = new THREE.BoxGeometry(roomW, wallD, roomD);
+      const floorTexture = texture.load("./floor-texture.jpeg");
+      const floorBumpMap = texture.load("./floor-normal-map.png");
+      const floorMat = new THREE.MeshPhysicalMaterial({
+        color: 0x573e1b,
+        reflectivity: 0.0,
+        bumpMap: floorBumpMap,
+        bumpScale: 0.05,
+        map: floorTexture
+      });
+      const floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.position.y = -roomH / 2 - wallD / 2;
+      floor.receiveShadow = true;
+
+      const wallTexture = texture.load("./wallpaper.jpg");
+      const wallMat = new THREE.MeshPhongMaterial({
+        color: 0x266e46,
+        map: wallTexture
+      });
+
+      const wallBFGeo = new THREE.BoxGeometry(roomW, roomH, wallD);
+
+      const wallBack = new THREE.Mesh(wallBFGeo, wallMat);
+      wallBack.position.z = - roomD / 2 + wallD / 2;
+      wallBack.receiveShadow = true;
+      
+      {
+        let planeGeo = new THREE.PlaneGeometry(8, 6);
+        let planeTexture = texture.load("./iseeyou.png");
+        let planeMat = new THREE.MeshStandardMaterial({
+          map: planeTexture,
+          transparent: true
+        });
+        let planeMesh = new THREE.Mesh(planeGeo, planeMat);
+        planeMesh.position.set(0, -1, wallD / 2 + 0.1);
+        planeMesh.rotation.z = 0.1
+        wallBack.add(planeMesh);
+      }
+
+      const wallFront = new THREE.Mesh(wallBFGeo, wallMat);
+      wallFront.position.z = roomD / 2 - wallD / 2;
+      wallFront.receiveShadow = true;
+
+      const wallRLGeo = new THREE.BoxGeometry(wallD, roomH, roomD);
+
+      const wallR = new THREE.Mesh(wallRLGeo, wallMat);
+      wallR.position.x = - roomW / 2 + wallD / 2;
+      wallR.receiveShadow = true;
+
+      const wallL = new THREE.Mesh(wallRLGeo, wallMat);
+      wallL.position.x = roomW / 2 - wallD / 2;
+      wallL.receiveShadow = true;
+
+      
+      const roomWalls = new THREE.Group();
+      roomWalls.add(ceil);
+      roomWalls.add(floor);
+      roomWalls.add(wallBack);
+      roomWalls.add(wallFront);
+      roomWalls.add(wallR);
+      roomWalls.add(wallL);
+      scene.add(roomWalls);
+    }
+
+    let lampLight;
+    const lampLightIntensity = 2;
+    {
+      const lampMat = new THREE.MeshPhongMaterial({
+        color: 0x000000
+      });
+
+      const lampWireGeo = new THREE.CylinderGeometry(0.05, 0.05, 1, 124);
+      const lampWire = new THREE.Mesh(lampWireGeo, lampMat);
+      lampWire.castShadow = true;
+
+      const lampCylGeo = new THREE.ConeGeometry(2, 0.65, 124, 124);
+      const lampCyl = new THREE.Mesh(lampCylGeo, lampMat);
+      lampCyl.position.y = -0.8;
+      lampCyl.castShadow = true;
+      
+      const lampInMat = new THREE.MeshBasicMaterial({
+        color: 0xffff00,
+        side: THREE.DoubleSide
+      });
+      const lampInGeo = new THREE.SphereGeometry(0.3, 124, 124, 0, Math.PI * 2, Math.PI / 2, Math.PI);
+      const lampIn = new THREE.Mesh(lampInGeo, lampInMat);
+      lampIn.position.y = 0.2;
+
+      lampLight = new THREE.PointLight(0xffff00, lampLightIntensity, 60);
+      lampLight.castShadow = true;
+      lampLight.shadow.mapSize.width = 512;
+      lampLight.shadow.mapSize.height = 512;
+      lampLight.shadow.camera.near = 0.5;
+      lampLight.shadow.camera.far = 500;
+      lampLight.position.set(0, -1.3, 0);
+      lampLight.add(lampIn);
+
+      const lamp = new THREE.Group();
+      lamp.add(lampWire);
+      lamp.add(lampCyl);
+      lamp.add(lampLight);
+      lamp.position.y = -3;
+
+      let lampPivot = new THREE.Group();
+      lampPivot.add(lamp);
+      lampPivot.position.y = roomH / 2 - 0.5 + 3;
+      scene.add(lampPivot);
+      
+      let lampRZ = 0.009,
+          lampDZ = 0.2,
+          lampRX = -0.003,
+          lampDX = -0.2;
+
+      animFuncs.push(() => {
+        if (lampDX + lampRX > 0.2) lampRX = -0.005;
+        else if (lampDX + lampRX < -0.2) lampRX = 0.005;
+
+        if (lampDZ + lampRZ > 0.2) lampRZ = -0.005;
+        else if (lampDZ + lampRZ < -0.2) lampRZ = 0.005;
+
+        lampDX += lampRX;
+        lampDZ += lampDZ;
+
+        lampPivot.rotation.set(lampDX, 0, lampRX);
+      });
+    }
+
+    let chost;
+    {
+      const chostGirlScale = document.querySelector("#chost-girl-scale");
+      const chostGeo = new THREE.PlaneGeometry(6, 8);
+      const chostTexture = texture.load("./chost-girl-black.png");
+      const chostAlphaMap = texture.load("./chost-girl-alphamap.png");
+      const chostMat = new THREE.MeshBasicMaterial({
+        alphaMap: chostAlphaMap,
+        transparent: true,
+        map: chostTexture,
+        side: THREE.DoubleSide
+      })
+      chost = new THREE.Mesh(chostGeo, chostMat);
+      chost.position.y = -1.5;
+      chost.position.x = 28;
+      chost.position.z = -17;
+      chost.rotation.y = -Math.PI / 4;
+
+      const canvasWrapper = document.querySelector(".canvas-wrapper");
+
+      function setGhostPosition() {
+        chost.position.x = getRandomIntInclusive(-roomW / 2, roomW / 2);
+        chost.position.z = getRandomIntInclusive(-roomD / 2, roomD / 2);
+        let a = chost.position.x - camera.position.x;
+        let b = chost.position.z - camera.position.z;
+        chost.rotation.y = a / b;
+        chost.visible = true;
+        canvasWrapper.classList.remove("shake");
+      }
+
+      chost.visible = false;
+      chost.name = "chost";
+      planes.push(chost);
+      const scarySream = document.querySelector("#scarySream");
+      let raycaster = new THREE.Raycaster();
+      animFuncs.push((pickPosition) => {
+        if (chost.visible) {
+          raycaster.setFromCamera(pickPosition, camera);
+          const intersectedObjects = raycaster.intersectObjects(scene.children, true);
+          let distance = new THREE.Line3(camera.position, chost.position).distance();
+          if (intersectedObjects.length && intersectedObjects[0].object.name === "chost" && distance < 40) {
+            if (scarySream.paused) {
+              scarySream.play().then(() => {
+                chost.visible = false;
+                chostGirlScale.style.opacity = 1;
+                screenShake.shake( camera, new THREE.Vector3(4, -5, -4), 500);
+                canvasWrapper.classList.add("shake");
+                setTimeout(() => {
+                  chostGirlScale.style.opacity = 0;
+                  setTimeout(setGhostPosition, 3000);
+                }, 500);
+              });
+            }
+          }
+        }
+      });
+      scene.add(chost);
+    }
+
+    {
+      const tableW = 10,
+          tableD = 6,
+          tableH = 3,
+          tableL = 0.2;
+
+      const tableMat = new THREE.MeshPhongMaterial({color: 0x65ccdb});
+
+      const tableTopGeo = new THREE.BoxGeometry(tableD, tableL, tableW);
+      const tableTop = new THREE.Mesh(tableTopGeo, tableMat);
+      tableTop.castShadow = true;
+      tableTop.receiveShadow = true;
+      addBilbord("Table", tableTop, {x: 2, y: 0, z: 3});
+
+      const tableLegGeo = new THREE.BoxGeometry(tableL, tableH, tableL);
+
+      const tableLegRB = new THREE.Mesh(tableLegGeo, tableMat);
+      tableLegRB.position.y = -tableH / 2;
+      tableLegRB.position.z = -tableW / 2 + tableL;
+      tableLegRB.position.x = -tableD / 2 + tableL;
+      tableLegRB.castShadow = true;
+      tableLegRB.receiveShadow = true;
+
+      const tableLegRF = tableLegRB.clone();
+      tableLegRF.position.z = tableW / 2 - tableL;
+
+      const tableLegLB = tableLegRF.clone();
+      tableLegLB.position.x = tableD / 2 - tableL;
+
+      const tableLegLF = tableLegLB.clone();
+      tableLegLF.position.z = -tableW / 2 + tableL;
+
+      const TVMat = new THREE.MeshPhongMaterial({color: 0x271752, side: THREE.DoubleSide});
+
+      const TVGeo = new THREE.BoxGeometry(0.2, 3, 6);
+      const TV = new THREE.Mesh(TVGeo, TVMat);
+      TV.castShadow = true;
+      TV.receiveShadow = true;
+      TV.position.y = tableH / 2 + 0.8;
+      addBilbord("TV", TV);
+
+      const TVSVideo = document.querySelector('#video');
+      const TVSTexture = new THREE.VideoTexture(TVSVideo);
+
+      const TVSGeo = new THREE.PlaneGeometry(5.6, 2.6);
+      const TVSMat = new THREE.MeshBasicMaterial({map: TVSTexture});
+      const TVS = new THREE.Mesh(TVSGeo, TVSMat);
+      TVS.name = "TVS";
+      pickFuncs.push({
+        name: "TVS",
+        func: () => {
+          try {
+            if (TVSVideo.paused) TVSVideo.play();
+            else TVSVideo.pause();
+          }
+          catch (e) {}
+        }
+      })
+      TVS.position.x = 0.11;
+      TVS.rotation.y = Math.PI / 2;
+      TV.add(TVS)
+
+      const TVLGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.8, 32);
+      const TVL = new THREE.Mesh(TVLGeo, TVMat);
+      TVL.castShadow = true;
+      TVL.receiveShadow = true;
+      TVL.position.y = tableH / 2 - 1.1;
+
+      const TVUGeo = new THREE.CircleGeometry(1, 60);
+      const TVU = new THREE.Mesh( TVUGeo, TVMat );
+      TVU.castShadow = true;
+      TVU.receiveShadow = true;
+      TVU.position.y = tableL / 2 + 0.01;
+      TVU.rotation.x = -Math.PI / 2;
+
+      const table = new THREE.Group();
+      table.add(tableTop);
+      table.add(tableLegRB);
+      table.add(tableLegRF);
+      table.add(tableLegLB);
+      table.add(tableLegLF);
+      table.add(TV);
+      table.add(TVL);
+      table.add(TVU);
+
+      table.position.y = -roomH / 2 + tableH - 0.2;
+      table.position.z = -roomD / 2 + tableD + 7;
+      table.position.x = -roomW / 2 + tableW + 3;
+      table.rotation.y = -Math.PI / 6;
+      scene.add(table)
+    }
+
+    {
+      const switchOut = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.35, 0.03), new THREE.MeshPhongMaterial({color: 0xcccccc}));
+      const switchIn = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.1), new THREE.MeshPhongMaterial({color: 0xffffff}));
+      switchIn.rotation.x = Math.PI / 18;
+      switchIn.position.z = 0.01;
+      switchIn.name = "switchIn";
+      const switchAudio = document.querySelector("#switcher-audio");
+      const violin = document.querySelector("#violin");
+      const piano = document.querySelector("#piano");
+      const mommy = document.querySelector("#mommy");
+      document.addEventListener("click", () => {
+        piano.play()
+        mommy.play()
+      }, {once: true});
+      violin.volume = 0.3;
+      mommy.volume = 0.2;
+      pickFuncs.push({
+        name: "switchIn",
+        func: () => {
+          switchAudio.play();
+          if (lampLight.intensity === lampLightIntensity) {
+            lampLight.intensity = 0;
+            switchIn.rotation.x = -Math.PI / 18;
+            chost.visible = true;
+            if (violin.paused) violin.play();
+            if (!piano.paused) piano.pause();
+            if (!mommy.paused) mommy.pause();
+          }
+          else {
+            lampLight.intensity = lampLightIntensity;
+            switchIn.rotation.x = Math.PI / 18;
+            chost.visible = false;
+            if (!violin.paused) violin.pause();
+            if (piano.paused) piano.play();
+            if (mommy.paused) mommy.play();
+          }
+        }
+      })
+      switchOut.rotation.y = Math.PI / 2;
+      switchOut.position.set(-roomW/2 + wallD, 0, roomD/2 - 3)
+      switchOut.add(switchIn);
+      scene.add(switchOut);
+      const lampSound = document.querySelector("#lamp-sound");
+      document.addEventListener("click", () => {lampSound.play()}, {once: true});
+    }
+
+    {
+      const carpetGeo = new THREE.PlaneGeometry(20, 14);
+      const carpetTexture = texture.load("./carpet-image.jpg");
+      const carpetBumpMap = texture.load("./carpet-normal-map.png");
+      const carpetMat = new THREE.MeshStandardMaterial({
+        color: 0x80b9d1,
+        bumpMap: carpetBumpMap,
+        bumpScale: 0.2,
+        map: carpetTexture
+      })
+      const carpet = new THREE.Mesh(carpetGeo, carpetMat);
+      carpet.rotation.z = Math.PI / 3;
+      carpet.rotation.x = -Math.PI / 2;
+      carpet.position.y = -roomH /2 + 0.1;
+      carpet.position.x = -6;
+      carpet.receiveShadow = true;
+      addBilbord("carpet", carpet, {x: 2, y: -6, z: 3});
+      scene.add(carpet)
+    }
+
+    {
+      objLoader.load(
+        './piano/piano.obj',
+        function (object) {
+          object.scale.set(8, 10, 8);
+          object.position.x = 16;
+          object.position.z = -6;
+          object.position.y = -roomH / 2
+          object.rotation.y = -Math.PI / 4 * 3
+
+          scene.add(object);
+        },
+        function (xhr) {},
+        function (error) {
+          console.log('An error happened', error);
+        }
+      );
+    }
+
+    let raycaster = new THREE.Raycaster();
+    let pickedObject = null;
+    const pickPosition = {x: 0, y: 0};
+
+    function getCanvasRelativePosition(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) * canvas.width  / rect.width,
+        y: (event.clientY - rect.top ) * canvas.height / rect.height,
+      };
+    }
+    
+    function setPickPosition(event) {
+      const pos = getCanvasRelativePosition(event);
+      pickPosition.x = (pos.x / canvas.width ) *  2 - 1;
+      pickPosition.y = (pos.y / canvas.height) * -2 + 1;
+      return pickPosition;
+    }
+
+    function clearPickPosition() {
+      pickPosition.x = -100000;
+      pickPosition.y = -100000;
+    }
+
+    window.addEventListener('mousemove', setPickPosition);
+    window.addEventListener('mouseout', clearPickPosition);
+    window.addEventListener('mouseleave', clearPickPosition);
+
+    window.addEventListener("click", (event) => {
+      raycaster.setFromCamera(setPickPosition(event), camera);
+      const intersectedObjects = raycaster.intersectObjects(scene.children, true);
+      if (intersectedObjects.length) {
+        pickedObject = intersectedObjects[0].object;
+        let pickable = pickFuncs.find((pickable) => pickable.name === pickedObject.name);
+        if (pickable && pickable.func) pickable.func(intersectedObjects[0]);
+      }
+    });
+
+    let walking = document.querySelector("#walking");
+    let walkKey = {
+      65: false,
+      87: false,
+      68: false,
+      83: false,
+      37: false,
+      38: false,
+      39: false,
+      40: false
+    }
+    let staticCam = false;
+    document.addEventListener("keydown", (e) => {
+      if ([65, 87, 68, 83, 37, 38, 39, 40].find(k => k === e.keyCode)) {
+        walkKey[e.keyCode] = true;
+      } else if (e.keyCode == 32) {
+        staticCam = true;
+      }
+    });
+    document.addEventListener("keyup", (e) => {
+      if ([65, 87, 68, 83, 37, 38, 39, 40].find(k => k === e.keyCode)) {
+        walkKey[e.keyCode] = false;
+      } else if (e.keyCode == 32) {
+        staticCam = false;
+      }
+    });
+
+    const coughAudio = document.querySelector("#cough");
+    function cough() {
+      let n = Math.round(Math.random() * 1000);
+      if (n < 3 && coughAudio.paused) {
+        coughAudio.play();
+        screenShake.shake(camera, new THREE.Vector3(0, 1, 0), 200);
+      }
+    }
+
+    function animate() {
+      renderer.render(scene, camera);
+      screenShake.update(camera);
+      if (!control.mouseDragOn && !staticCam) control.update(clock.getDelta());
+      cough();
+
+      if ((Object.values(walkKey).some(e => e)) && walking.paused) {
+        walking.play();
+      } else if (!walking.paused) {
+        walking.pause();
+      }
+
+      if(camera.position.x > cameraBox.max.x){
+        camera.position.x = cameraBox.max.x;
+      }
+      if(camera.position.x < cameraBox.min.x){
+        camera.position.x = cameraBox.min.x;
+      }
+      if(camera.position.z > cameraBox.max.z){
+        camera.position.z = cameraBox.max.z;
+      }
+      if(camera.position.z < cameraBox.min.z){
+        camera.position.z = cameraBox.min.z;
+      }
+      if(camera.position.y > 1.5){
+        camera.position.y = 1.5;
+      }
+      if(camera.position.y < -0.5){
+        camera.position.y = -0.5;
+      }
+
+      for (let func of animFuncs) {
+        func(pickPosition);
+      }
+
+      planes.forEach((plane) => {
+        plane.quaternion.copy(camera.quaternion);
+      });
+      
+      requestAnimationFrame(animate);
+    }
+
+animate();
+
+    function getRandomIntInclusive(min, max) {
+      min = Math.ceil(min);
+      max = Math.floor(max);
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function ScreenShake() {
+      return {
+        enabled: false,
+        _timestampStart: undefined,
+        _timestampEnd: undefined,
+        _startPoint: undefined,
+        _endPoint: undefined,
+        update: function update(camera) {
+          if ( this.enabled == true ) {
+            const now = Date.now();
+            if ( this._timestampEnd > now ) {
+              let interval = (Date.now() - this._timestampStart) / 
+                (this._timestampEnd - this._timestampStart) ;
+              this.computePosition( camera, interval );
+            } else {
+              camera.position.copy(this._startPoint);
+              this.enabled = false;
+            };
+          };
+        },
+
+        shake: function shake(camera, vecToAdd, milliseconds) {
+          this.enabled = true ;
+          this._timestampStart = Date.now();
+          this._timestampEnd = this._timestampStart + milliseconds;
+          this._startPoint = new THREE.Vector3().copy(camera.position);
+          this._endPoint = new THREE.Vector3().addVectors( camera.position, vecToAdd );
+        },
+
+        computePosition: function computePosition(camera, interval) {
+          if (interval < 0.4) {
+            var position = this.getQuadra( interval / 0.4 );
+          } else if (interval < 0.7) {
+            var position = this.getQuadra( (interval-0.4) / 0.3 ) * -0.6;
+          } else if (interval < 0.9) {
+            var position = this.getQuadra( (interval-0.7) / 0.2 ) * 0.3;
+          } else {
+            var position = this.getQuadra( (interval-0.9) / 0.1 ) * -0.1;
+          }
+          camera.position.lerpVectors( this._startPoint, this._endPoint, position );
+        },
+
+        getQuadra: function getQuadra(t) {
+          return 9.436896e-16 + (4*t) - (4*(t*t)) ;
+        }
+      };
+    };
+
+    async function addBilbord(text, mesh, shift) {
+      const div = document.createElement("div");
+      div.classList.add("clone-me");
+      div.innerText = text;
+      document.body.appendChild(div);
+      let canvas = await html2canvas(div, {backgroundColor:null});
+      div.remove();
+      let textGeo = new THREE.PlaneGeometry(3, 3);
+      let textTexture = new THREE.CanvasTexture(canvas);
+      let textMat = new THREE.MeshBasicMaterial({
+        transparent: true,
+        side: THREE.DoubleSide,
+        map: textTexture
+      });
+      let textMesh = new THREE.Mesh(textGeo, textMat);
+      let pos = new THREE.Vector3();
+      mesh.getWorldPosition(pos);
+      if (shift) {
+        textMesh.position.set(pos.x + shift.x, pos.y + (mesh.geometry.parameters.height || 0) / 2 + 1 + shift.y, pos.z + shift.z);
+      }
+      else {
+        textMesh.position.set(pos.x, pos.y + (mesh.geometry.parameters.height || 0) / 2 + 1, pos.z);
+      }
+      mesh.textMesh = textMesh;
+      scene.add(textMesh)
+      planes.push(textMesh);
+    }
+  </script>
+</body>
+
+</html>
