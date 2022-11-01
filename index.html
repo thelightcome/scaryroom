@@ -5,9 +5,9 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="shortcut icon" href="./chost-girl-black-scale.png" type="image/x-icon">
+  <link rel="shortcut icon" href="/chost-girl-black-scale.png" type="image/x-icon">
   <title>ROOM-THREEJS</title>
-  <script src="./html2canvas.min.js"></script>
+  <script src="/html2canvas.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -120,17 +120,17 @@
 </head>
 
 <body>
-  <video src="./piano-effect.mp4" id="piano" autoplay loop></video>
-  <video src="./mommy.mp4" id="mommy" autoplay loop></video>
-  <audio id="lamp-sound" src="./lamp-sound.mp3" loop></audio>
-  <video id="video" src="./discovery.mp4"></video>
-  <audio id="switcher-audio" src="./switcher.wav"></audio>
-  <audio id="violin" src="./violin.wav" loop></audio>
-  <audio id="scarySream" src="./scary-sream.wav"></audio>
-  <audio id="manScream" src="./man-scream.wav"></audio>
-  <audio id="walking" src="./walking.wav" loop></audio>
-  <audio src="./cough.wav" id="cough"></audio>
-  <img id="chost-girl-scale" src="./chost-girl-black-scale.png" alt="">
+  <video src="/piano-effect.mp4" id="piano" autoplay loop></video>
+  <video src="/mommy.mp4" id="mommy" autoplay loop></video>
+  <audio id="lamp-sound" src="/lamp-sound.mp3" loop></audio>
+  <video id="video" src="/discovery.mp4"></video>
+  <audio id="switcher-audio" src="/switcher.wav"></audio>
+  <audio id="violin" src="/violin.wav" loop></audio>
+  <audio id="scarySream" src="/scary-sream.wav"></audio>
+  <audio id="manScream" src="/man-scream.wav"></audio>
+  <audio id="walking" src="/walking.wav" loop></audio>
+  <audio src="/cough.wav" id="cough"></audio>
+  <img id="chost-girl-scale" src="/chost-girl-black-scale.png" alt="">
   <div class="canvas-wrapper">
     <canvas id="canvas"></canvas>
   </div>
@@ -224,7 +224,7 @@ setup();
 
     {
       const ceilGeo = new THREE.BoxGeometry(roomW, wallD, roomD);
-      const ceilTexture = texture.load("./ceil.jpg");
+      const ceilTexture = texture.load("/ceil.jpg");
       const ceilMat = new THREE.MeshPhongMaterial({
         color: 0xeff0da,
         map: ceilTexture
@@ -234,8 +234,8 @@ setup();
       ceil.receiveShadow = true;
 
       const floorGeo = new THREE.BoxGeometry(roomW, wallD, roomD);
-      const floorTexture = texture.load("./floor-texture.jpeg");
-      const floorBumpMap = texture.load("./floor-normal-map.png");
+      const floorTexture = texture.load("/floor-texture.jpeg");
+      const floorBumpMap = texture.load("/floor-normal-map.png");
       const floorMat = new THREE.MeshPhysicalMaterial({
         color: 0x573e1b,
         reflectivity: 0.0,
@@ -247,7 +247,7 @@ setup();
       floor.position.y = -roomH / 2 - wallD / 2;
       floor.receiveShadow = true;
 
-      const wallTexture = texture.load("./wallpaper.jpg");
+      const wallTexture = texture.load("/wallpaper.jpg");
       const wallMat = new THREE.MeshPhongMaterial({
         color: 0x266e46,
         map: wallTexture
@@ -261,7 +261,7 @@ setup();
       
       {
         let planeGeo = new THREE.PlaneGeometry(8, 6);
-        let planeTexture = texture.load("./iseeyou.png");
+        let planeTexture = texture.load("/iseeyou.png");
         let planeMat = new THREE.MeshStandardMaterial({
           map: planeTexture,
           transparent: true
@@ -364,8 +364,8 @@ setup();
     {
       const chostGirlScale = document.querySelector("#chost-girl-scale");
       const chostGeo = new THREE.PlaneGeometry(6, 8);
-      const chostTexture = texture.load("./chost-girl-black.png");
-      const chostAlphaMap = texture.load("./chost-girl-alphamap.png");
+      const chostTexture = texture.load("/chost-girl-black.png");
+      const chostAlphaMap = texture.load("/chost-girl-alphamap.png");
       const chostMat = new THREE.MeshBasicMaterial({
         alphaMap: chostAlphaMap,
         transparent: true,
@@ -562,8 +562,8 @@ setup();
 
     {
       const carpetGeo = new THREE.PlaneGeometry(20, 14);
-      const carpetTexture = texture.load("./carpet-image.jpg");
-      const carpetBumpMap = texture.load("./carpet-normal-map.png");
+      const carpetTexture = texture.load("/carpet-image.jpg");
+      const carpetBumpMap = texture.load("/carpet-normal-map.png");
       const carpetMat = new THREE.MeshStandardMaterial({
         color: 0x80b9d1,
         bumpMap: carpetBumpMap,
@@ -582,7 +582,7 @@ setup();
 
     {
       objLoader.load(
-        './piano/piano.obj',
+        '/piano/piano.obj',
         function (object) {
           object.scale.set(8, 10, 8);
           object.position.x = 16;
