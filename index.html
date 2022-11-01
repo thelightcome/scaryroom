@@ -134,10 +134,18 @@
   <div class="canvas-wrapper">
     <canvas id="canvas"></canvas>
   </div>
+  <script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three/build/three.module.js"
+    }
+  }
+</script>
   <script type="module">
-    import * as THREE from 'https://cdn.skypack.dev/three';
-    import { FirstPersonControls } from "https://cdn.skypack.dev/three/examples/jsm/controls/FirstPersonControls.js"
-    import { OBJLoader } from "https://cdn.skypack.dev/three/examples/jsm/loaders/OBJLoader.js"
+    import * as THREE from 'three';
+    import { FirstPersonControls } from 'https://unpkg.com/three/examples/jsm/controls/FirstPersonControls.js';
+    import { OBJLoader } from 'https://unpkg.com/three/examples/jsm/loaders/OBJLoader.js';
 
     let canvas, cw, ch;
     let scene, camera, cameraBox, renderer, control;
